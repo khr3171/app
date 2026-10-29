@@ -11,7 +11,7 @@
 - **GitHub**: 소스와 잠금 파일 관리, GitHub Actions 테스트·빌드
 - **Vercel**: Vite 정적 프런트엔드 + `api/index.mjs` Node.js 서버리스 함수
 - **Firebase Authentication**: 익명 체험, 이름·생년월일을 서버에서 확인한 뒤 Custom Token으로 로그인
-- **Cloud Firestore**: 회원별 테스트 기록, 공유 링크, 전체 통계, 서버 요청 제한
+- **Firebase Realtime Database**: 회원별 테스트 기록, 공유 링크, 전체 통계, 서버 요청 제한
 - **네이버**: 공식 지역 검색 API와 선택적 Dynamic Map, 지도 검색·길찾기 링크
 - **캐치테이블·배달의민족**: 외부 서비스 연결. 매장별 예약·배달 지원 여부를 자동으로 확정하지 않습니다.
 
@@ -43,7 +43,7 @@ npm run build
 
 ## GitHub에 올리기
 
-이 폴더의 **내용 전체가 저장소 루트**에 있어야 합니다. `package.json`, `vercel.json`, `api/`, `public/` 등이 최상위에 놓이는 구조입니다. `node_modules/`, `dist/`, `.env`, 서비스 계정 JSON은 올리지 않습니다. `.gitignore`가 포함되어 있습니다.
+이 폴더의 **내용 전체가 저장소 루트**에 있어야 합니다. `package.json`, `vercel.json`, `api/`, `lib/`, `public/` 등이 최상위에 놓이는 구조입니다. `node_modules/`, `dist/`, `.env`, 서비스 계정 JSON은 올리지 않습니다. `.gitignore`가 포함되어 있습니다.
 
 GitHub Desktop에서 이 폴더를 로컬 저장소로 추가하거나, Git 인증을 마친 터미널에서 다음과 같이 연결할 수 있습니다. 원격 저장소가 비어 있을 때의 예시이며 기존 파일이 있다면 먼저 내려받아 병합하세요.
 
@@ -60,16 +60,17 @@ Git에서 작성자 설정을 요청하면 본인의 이름·이메일을 설정
 
 ## Firebase 설정
 
-1. [Firebase Console](https://console.firebase.google.com/)에서 프로젝트를 만들고 웹 앱을 등록합니다.
-2. Authentication을 시작하고 **익명(Anonymous)** 제공자를 활성화합니다. 이 앱의 이름 로그인은 Email/Password가 아니라 서버의 Custom Token 방식입니다.
-3. Cloud Firestore 데이터베이스를 생성합니다. 가능하면 이용자와 가까운 리전을 선택합니다.
-4. Firestore Rules 탭에 `firestore.rules` 내용을 붙여 넣고 게시합니다. 클라이언트의 직접 읽기·쓰기는 전부 거절하고 Vercel 서버의 Admin SDK를 통해서만 접근합니다. 테스트 모드 규칙을 그대로 두지 마세요.
-5. 프로젝트 설정 → 일반 → 웹 앱 설정에서 아래 공개 설정 네 개를 확인합니다.
-6. 프로젝트 설정 → 서비스 계정에서 서버용 키를 발급하고, **Vercel 환경변수에만** `project_id`, `client_email`, `private_key`를 대응시킵니다. 서비스 계정 파일을 저장소·채팅·공유 폴더에 넣지 않습니다.
-7. Authentication 설정의 승인된 도메인에 최종 Vercel 도메인을 추가합니다. 로컬 개발이 필요하면 `localhost`도 등록합니다.
-8. Firestore의 `rateLimits` 컬렉션 그룹에 `expiresAt` TTL 정책을 켜면 만료된 요청 제한 문서를 자동 정리할 수 있습니다. CLI로 관리하려면 `firebase.json`과 `firestore.indexes.json`을 사용합니다. TTL 삭제가 지연돼도 서버는 만료 시간을 직접 검사합니다.
+자세한 연결 절차는 [Realtime Database 연결 안내](RealtimeDatabase-연결안내.md)를 참고하세요.
 
-Admin SDK는 Firestore 규칙을 우회하므로 서버 서비스 계정의 IAM 권한도 관리해야 합니다. 브라우저에 관리자 SDK나 비밀키를 전달하지 않습니다.
+1. Firebase 프로젝트와 웹 앱을 등록합니다.
+2. Authentication의 **익명(Anonymous)** 로그인을 활성화합니다.
+3. 이미 생성한 **Realtime Database**를 사용합니다. 데이터 탭의 데이터베이스 주소를 복사합니다.
+4. Realtime Database → 규칙 탭에 `database.rules.json` 내용을 붙여 넣고 게시합니다. 읽기·쓰기는 차단하고 조회용 인덱스만 추가합니다.
+5. 웹 앱 설정값, 서비스 계정, 데이터베이스 주소를 아래 Vercel 환경변수로 등록합니다.
+6. Authentication 승인된 도메인에 `app-2ygj.vercel.app`을 추가합니다.
+7. Vercel에서 재배포하고 `/api/config`에서 `storage: "realtime-database"`와 `configured: true`를 확인한 뒤 가입·기록 저장을 테스트합니다.
+
+Admin SDK는 서버의 서비스 계정 권한으로 접근합니다. 브라우저 직접 접근을 허용할 필요는 없습니다. 계정은 `accounts`, 결과는 `results`, 요청 제한은 `rateLimits`에 저장합니다. 요청 제한 문서는 같은 키를 재사용하며 서버가 만료 시간을 직접 검사합니다.
 
 ### Vercel 환경변수
 
@@ -79,6 +80,7 @@ Admin SDK는 Firestore 규칙을 우회하므로 서버 서비스 계정의 IAM 
 | `FIREBASE_AUTH_DOMAIN` | Firebase 웹 앱의 authDomain | 웹 공개 설정 |
 | `FIREBASE_PROJECT_ID` | Firebase 프로젝트 ID | 웹 공개 설정 |
 | `FIREBASE_APP_ID` | Firebase 웹 앱의 appId | 웹 공개 설정 |
+| `FIREBASE_DATABASE_URL` | Realtime Database 데이터 탭의 데이터베이스 주소 | 서버 연결 설정 |
 | `FIREBASE_CLIENT_EMAIL` | 서비스 계정 client_email | 서버 전용 |
 | `FIREBASE_PRIVATE_KEY` | 서비스 계정 private_key 전체 PEM | 서버 전용 비밀값 |
 | `RATE_LIMIT_SECRET` | 임의의 길고 무작위인 문자열 | 서버 전용 비밀값 |
@@ -130,20 +132,21 @@ Firebase와 네이버 계정 키가 제공되지 않은 상태에서는 실제 �
 
 ## 로그인과 개인정보
 
-이름은 계정 이름으로 저장하고 생년월일은 scrypt+무작위 salt 해시로만 저장합니다. 이름이 같으면 별칭을 덧붙여야 합니다. 생년월일 원문과 검색 주소는 Firestore에 저장하지 않습니다. 공유 링크에는 결과 유형·메뉴·추천 이유·결과 날짜만 포함됩니다. 기록 삭제 시 공유 링크도 제거합니다.
+이름은 계정 이름으로 저장하고 생년월일은 scrypt+무작위 salt 해시로만 저장합니다. 이름이 같으면 별칭을 덧붙여야 합니다. 생년월일 원문과 검색 주소는 Realtime Database에 저장하지 않습니다. 공유 링크에는 결과 유형·메뉴·추천 이유·결과 날짜만 포함됩니다. 기록 삭제 시 공유 링크도 만료됩니다.
 
 요청하신 이름+생년월일 6자리 로그인은 추측하기 쉬운 **데모용 인증**입니다. 공개 서비스 운영 전에는 Firebase의 이메일·소셜 로그인, 계정 복구, 관리자 다중 인증 등으로 보강해야 합니다. 요청 제한은 보조 장치이며 이 약점을 없애지 않습니다. 현재 운영자 연락처·개인정보 보유기간은 지정되지 않았으므로 공개 운영 전에 실제 정책과 연락처를 보완하세요. Firebase 및 네이버 사용량에 따른 비용은 각 콘솔에서 한도·알림으로 관리하세요.
 
 ## 검증 범위
 
-`npm test`는 10개 테스트와 1,200개 추천 조합을 검사합니다. 빌드 검증, 브라우저에서 8문항→결과→주소 검색 흐름과 모바일 가로 넘침을 확인했습니다. 실제 Firebase 계정 가입·클라우드 저장·관리자 권한 및 네이버 API 응답·지도 SDK는 실제 프로젝트 환경변수 설정 후 위 절차로 검증해야 합니다.
+`npm test`는 17개 테스트와 1,200개 추천 조합을 검사합니다. Realtime Database용 메모리 테스트 저장소로 중복 저장, 계정별 접근, 공유 만료, 기록 삭제, 게스트 이전, 요청 제한을 검사합니다. 빌드 검증, 브라우저에서 8문항→결과→주소 검색 흐름과 모바일 가로 넘침을 확인했습니다. 실제 Firebase 계정 가입·클라우드 저장·관리자 권한 및 네이버 API 응답·지도 SDK는 실제 프로젝트 환경변수 설정 후 위 절차로 검증해야 합니다.
 
 ## 참고 문서
 
 - [Vercel Node.js Functions](https://vercel.com/docs/functions/runtimes/node-js)
 - [Firebase Custom Token 로그인](https://firebase.google.com/docs/auth/web/custom-auth)
 - [Firebase 익명 로그인](https://firebase.google.com/docs/auth/web/anonymous-auth)
-- [Firestore 보안 규칙](https://firebase.google.com/docs/firestore/security/get-started)
+- [Realtime Database Admin SDK](https://firebase.google.com/docs/database/admin/start)
+- [Realtime Database 데이터 저장](https://firebase.google.com/docs/database/admin/save-data)
 - [네이버 지역 검색](https://developers.naver.com/docs/serviceapi/search/local/local.md)
 - [네이버 지도 SDK](https://navermaps.github.io/maps.js.ncp/docs/tutorial-2-Getting-Started.html)
 - [네이버 지도 앱 연결](https://guide.ncloud-docs.com/docs/maps-url-scheme)

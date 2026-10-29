@@ -1,6 +1,6 @@
 import {initializeApp} from 'firebase/app';
 import {getAuth,signInAnonymously,signInWithCustomToken,signOut} from 'firebase/auth';
-import {questions,menus,categories,recommend,persona} from './engine.mjs';
+import {questions,menus,categories,recommend,persona} from '../lib/engine.mjs';
 import mascotUrl from './chef.png';
 
 const $=s=>document.querySelector(s),app=$('#app');

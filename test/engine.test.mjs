@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {menus,questions,recommend,persona,validAnswers,weights} from '../public/engine.mjs';
+import {menus,questions,recommend,persona,validAnswers,weights} from '../lib/engine.mjs';
 const base={mood:'comfort',company:'alone',hunger:1,taste:'mild',form:'soup',weather:'rain',adventure:0,budget:1};
 test('요청한 메뉴를 포함하고 중복 없이 구성한다',()=>{assert.equal(new Set(menus.map(m=>m.name)).size,menus.length);for(const name of ['김치찌개','마라탕','가츠동','파스타','팟타이','샐러드','김밥'])assert.ok(menus.some(m=>m.name===name));assert.equal(Object.values(weights).reduce((a,b)=>a+b),100);assert.equal(questions.length,8);assert.ok(questions.every(q=>q.options.length>=4&&q.options.length<=5));});
 test('미완성 답변이나 잘못된 선택을 거절한다',()=>{assert.equal(validAnswers({}),false);assert.equal(validAnswers({...base,budget:999}),false);assert.throws(()=>recommend({}));assert.throws(()=>recommend(base,'','wrong'));});

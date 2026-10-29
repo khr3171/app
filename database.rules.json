@@ -1,0 +1,8 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "accounts": { ".indexOn": ["role"] },
+    "results": { ".indexOn": ["uid", "shareId"] }
+  }
+}
