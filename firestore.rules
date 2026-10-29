@@ -1,0 +1,8 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All database access passes through authorized Vercel server endpoints.
+    // Firebase Admin SDK uses IAM, not these client rules.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

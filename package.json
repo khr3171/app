@@ -1,0 +1,12 @@
+{
+  "name": "lunch-time-run-chija",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "내 마음을 알아주는 오늘의 점심 메뉴 추천",
+  "scripts": {"dev": "node --env-file-if-exists=.env server.mjs", "start": "npm run dev", "build": "vite build", "test": "node --test test/*.test.mjs", "setup:admin":"node --env-file=.env scripts/setup-admin.mjs"},
+  "dependencies": {"firebase": "^13.1.0", "firebase-admin": "^14.5.0"},
+  "devDependencies": {"vite": "^8.3.5"},
+  "overrides": {"@grpc/grpc-js": "^1.13.6"},
+  "engines": {"node": "24.x"}
+}
